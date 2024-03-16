@@ -10,10 +10,11 @@
 #define PB_GPIO 5
 #define PB_GPIO_MASK (1ULL << GPIO_Pin_5)
 
-#define DEBOUNCE_THRESHOLD 30
+#define DEBOUNCE_THRESHOLD 5
 
 uint32_t state = 0;
 volatile uint32_t prev_trigger = 0;
+volatile uint32_t num_dialed = 0;
 
 static xQueueHandle gpio_evt_queue = NULL;
 
@@ -31,6 +32,16 @@ static void toggle_LED(void *arg) {
       if ((current_trigger - prev_trigger) > DEBOUNCE_THRESHOLD) {
         state = ~state;
         gpio_set_level(LED_GPIO, state);
+        // printf("toggled, diff: %d\n", current_trigger - prev_trigger);
+        if ((current_trigger - prev_trigger) > 10) {
+          printf("dialed %d\n", num_dialed);
+          num_dialed = 0;
+
+        } else {
+          num_dialed++;
+        }
+      } else {
+        // printf("rejected, diff: %d\n", current_trigger - prev_trigger);
       }
       prev_trigger = xTaskGetTickCount();
     }
