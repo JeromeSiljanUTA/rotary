@@ -123,6 +123,9 @@ static void toggle_LED(void *arg) {
 
         } else {
           num_dialed++;
+          if (num_dialed == 10) {
+            num_dialed = 0;
+          }
           prev_num_dialed = num_dialed;
           hw_timer_alarm_us(FINISHED_DIALING, false);
         }
