@@ -13,21 +13,21 @@
 
 void debounce_rotary() {
   while (1) {
+    // Inspired by https://www.ganssle.com/debouncing-pt2.htm
     static uint8_t padded_state = 0;
     static uint8_t state = 0;
     static uint8_t value = 0;
     padded_state = (padded_state << 1) | gpio_get_level(PB_GPIO) | 0xf0;
     // 10 * 2 = at least 20 ms of consecutive high followed by at least 20 ms of
     // consecutive low 11110000 11111100
-
     state = (state << 1) | gpio_get_level(PB_GPIO);
     // 10 * 6 = 60 ms of consecutive low
     if (state == 0xc0) {
+      value = value % 10; // return 0 if 10
       printf("Dialed %d\n", value);
       value = 0;
     } else if (padded_state == 0xfc) {
       value++;
-      // printf("%d\n", value);
     }
     vTaskDelay(10 / portTICK_RATE_MS);
   }
