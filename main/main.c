@@ -17,6 +17,22 @@
 #define PB_GPIO 5
 #define PB_GPIO_MASK (1ULL << GPIO_Pin_5)
 
+#define NUM_AUTOMATIONS 10
+#define ENTITY_ID_MAX_LEN 50
+
+char automation_entity_ids[NUM_AUTOMATIONS][ENTITY_ID_MAX_LEN] = {
+    "{\"entity_id\":\"automation.rotary_0\"}",
+    "{\"entity_id\":\"automation.rotary_1\"}",
+    "{\"entity_id\":\"automation.rotary_2\"}",
+    "{\"entity_id\":\"automation.rotary_3\"}",
+    "{\"entity_id\":\"automation.rotary_4\"}",
+    "{\"entity_id\":\"automation.rotary_5\"}",
+    "{\"entity_id\":\"automation.rotary_6\"}",
+    "{\"entity_id\":\"automation.rotary_7\"}",
+    "{\"entity_id\":\"automation.rotary_8\"}",
+    "{\"entity_id\":\"automation.rotary_9\"}",
+};
+
 uint8_t new_number = 0;
 uint8_t value = 0;
 
@@ -45,7 +61,7 @@ static esp_err_t event_handler(void *ctx, system_event_t *event) {
   return ESP_OK;
 }
 
-void http_post() {
+void trigger_automation() {
   // Perform HTTP POST request
   esp_http_client_config_t config = {
       .url = URL,
@@ -55,8 +71,8 @@ void http_post() {
       .timeout_ms = 10000,
   };
   esp_http_client_handle_t client = esp_http_client_init(&config);
-  const char *post_data = "{\"entity_id\":\"light.desk_lamp_light\"}";
-  esp_http_client_set_post_field(client, post_data, strlen(post_data));
+  esp_http_client_set_post_field(client, automation_entity_ids[value],
+                                 strlen(automation_entity_ids[value]));
   esp_http_client_set_header(client, "Content-Type", "application/json");
   esp_http_client_set_header(client, "Authorization", HASS_TOKEN);
   esp_err_t err = esp_http_client_perform(client);
@@ -68,6 +84,7 @@ void http_post() {
     ESP_LOGE(TAG, "HTTP POST request failed: %s", esp_err_to_name(err));
   }
   esp_http_client_cleanup(client);
+  value = 0;
 }
 
 void wifi_init_sta() {
@@ -102,7 +119,6 @@ void debounce_rotary() {
     // 10 * 6 = 60 ms of consecutive low
     if (state == 0xc0) {
       value = value % 10; // return 0 if 10
-      // printf("Dialed %d\n", value);
       new_number = 1;
     } else if (padded_state == 0xfc) {
       value++;
@@ -116,8 +132,7 @@ void handle_number() {
     if (new_number) {
       printf("Dialed %d\n", value);
       new_number = 0;
-      value = 0;
-      http_post();
+      trigger_automation();
     }
     vTaskDelay(300 / portTICK_RATE_MS);
   }
